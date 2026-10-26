@@ -197,9 +197,7 @@ textarea:focus{border-color:var(--violet);box-shadow:0 0 0 3px rgba(139,92,246,.
     <button class="chip">Комедия</button><button class="chip">Романтика</button><button class="chip">Мультик</button><button class="chip">Ужастик</button><button class="chip">Сама напишу</button>
   </div>
   <textarea id="wish" maxlength="500" placeholder="Напиши здесь название или желание…"></textarea>
-  <div class="err" id="err"></div>
-  <a id="fallback" class="hidden" target="_blank" rel="noopener">Не получается? Нажми сюда и отправь выбор мне в Telegram</a>
-  <button id="sendBtn" disabled>Отправить</button>
+  <div class="err" id="err"></div>  <button id="sendBtn" disabled>Отправить</button>
   <div class="note">Нажми «Отправить», и я сразу узнаю твой выбор</div>
 </section>
 
@@ -214,9 +212,7 @@ textarea:focus{border-color:var(--violet);box-shadow:0 0 0 3px rgba(139,92,246,.
 /* ===== НАСТРОЙКИ ===== */
 const TG_TOKEN   = "8565815856:AAENan1xbsfL2MJaJk3u8UWWFPm-d9RcSOQ";   // токен бота от @BotFather
 const TG_CHAT_ID = "1216081956";   // твой chat id
-const W3_KEY     = "e6c1171d-1a60-4800-b0cf-eab863153684";   // ключ с web3forms.com (ответ придёт на почту, работает без VPN)
-const TG_USERNAME = "Aleksandr_Razu";  // твой username в Telegram без @ (запасная ссылка, если ничего не отправилось)
-/* ===================== */
+const W3_KEY     = "e6c1171d-1a60-4800-b0cf-eab863153684";   // ключ с web3forms.com (ответ придёт на почту, работает без VPN)/* ===================== */
 
 const $ = id => document.getElementById(id);
 
@@ -446,12 +442,7 @@ sendBtn.onclick=async()=>{
     }
     S.tada();confetti(140);go('s6');
   }catch(e){
-    $('err').textContent='Не отправилось. Проверь интернет и нажми ещё раз.';
-    if(TG_USERNAME){
-      const a=$('fallback');
-      a.href='https://t.me/'+TG_USERNAME+'?text='+encodeURIComponent(msg);
-      a.classList.remove('hidden');
-    }
+    $('err').textContent='Не получилось отправить. Проверь интернет и нажми «Отправить» ещё раз.';
     sendBtn.disabled=false;sendBtn.textContent='Отправить';
   }
 };
