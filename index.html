@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Для Даши</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg1:#0b0d1a; --bg2:#1a1340; --blue:#4a6cf7; --violet:#8b5cf6; --gray:#9aa0b4;
+  --card:rgba(255,255,255,.07); --line:rgba(255,255,255,.14); --text:#eef0ff; --glow:#a78bfa;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg1);color:var(--text);font-family:'Nunito',system-ui,sans-serif;overflow:hidden;touch-action:manipulation}
+body{background:radial-gradient(ellipse at 50% 0%,#2a1d63 0%,var(--bg2) 35%,var(--bg1) 80%)}
+h1,h2,.serif{font-family:'Playfair Display',Georgia,serif;font-weight:500}
+#bg{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.star-bg{position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;opacity:.3;animation:tw 3s infinite ease-in-out}
+@keyframes tw{0%,100%{opacity:.15;transform:scale(1)}50%{opacity:.9;transform:scale(1.6)}}
+#beam{position:fixed;left:0;right:0;top:0;height:100%;z-index:0;pointer-events:none;
+  background:linear-gradient(to bottom,rgba(167,139,250,.22),rgba(74,108,247,.05) 65%,transparent);
+  clip-path:polygon(46% 0,54% 0,100% 100%,0 100%);animation:flick 4s infinite ease-in-out}
+@keyframes flick{0%,100%{opacity:.55}45%{opacity:.85}50%{opacity:.5}60%{opacity:.9}}
+.float{position:fixed;bottom:-30px;z-index:0;pointer-events:none;animation:up linear forwards;opacity:.6}
+@keyframes up{to{transform:translateY(-110vh) rotate(25deg);opacity:0}}
+
+#dots{position:fixed;top:16px;left:0;right:0;display:flex;justify-content:center;gap:8px;z-index:5}
+#dots i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.2);transition:all .4s}
+#dots i.on{background:var(--glow);width:24px;border-radius:6px;box-shadow:0 0 10px var(--glow)}
+#dots i.past{background:var(--violet)}
+
+.screen{position:fixed;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:48px 22px 24px;text-align:center;opacity:0;pointer-events:none;transition:opacity .7s ease, transform .7s ease;transform:translateY(14px)}
+.screen.active{opacity:1;pointer-events:auto;transform:none}
+h1{font-size:clamp(34px,9vw,56px);margin:0 0 10px;line-height:1.15}
+h2{font-size:clamp(24px,6.5vw,34px);margin:0 0 10px;line-height:1.25}
+p{font-size:clamp(16px,4.2vw,19px);line-height:1.55;color:#d6d9f0;margin:0 0 18px;max-width:440px}
+.sub{color:var(--gray)}
+.hint{display:flex;align-items:center;gap:8px;color:var(--glow);font-weight:700;font-size:16px;margin-bottom:16px}
+.hint .f{display:inline-block;font-size:24px;animation:tap 1.2s infinite}
+@keyframes tap{0%,100%{transform:translateY(0)}50%{transform:translateY(8px) scale(1.15)}}
+button{font:inherit;cursor:pointer;border:0;color:#fff;padding:14px 30px;border-radius:999px;font-weight:700;font-size:17px;
+  background:linear-gradient(135deg,var(--blue),var(--violet));box-shadow:0 8px 28px rgba(139,92,246,.45);transition:transform .15s, box-shadow .2s}
+button:active{transform:scale(.95)}
+button.ghost{background:transparent;border:1px solid var(--line);box-shadow:none;color:var(--gray)}
+button:disabled{opacity:.45;box-shadow:none;cursor:default}
+button.pulse{animation:btnp 1.6s infinite}
+@keyframes btnp{0%,100%{box-shadow:0 8px 28px rgba(139,92,246,.45)}50%{box-shadow:0 0 0 12px rgba(139,92,246,.18),0 8px 34px rgba(139,92,246,.7);transform:scale(1.04)}}
+.hidden{display:none!important}
+.pop-in{animation:popin .6s cubic-bezier(.2,1.4,.4,1) both}
+@keyframes popin{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
+
+/* sparkles on tap */
+.sp{position:fixed;z-index:70;pointer-events:none;font-size:16px;animation:sp .8s ease-out forwards}
+@keyframes sp{to{transform:translate(var(--dx),var(--dy)) scale(.2) rotate(180deg);opacity:0}}
+
+/* curtain */
+#curtain{position:fixed;inset:0;z-index:1;display:flex;pointer-events:none}
+#curtain div{width:50%;height:100%;transition:transform 2.4s cubic-bezier(.7,0,.2,1);
+  background:repeating-linear-gradient(90deg,#1b1650 0,#2e2380 28px,#1b1650 56px);box-shadow:inset 0 0 90px rgba(0,0,0,.7)}
+#curtain.open .l{transform:translateX(-102%)}
+#curtain.open .r{transform:translateX(102%)}
+#curtain.gone{display:none}
+#s0 h1,#s0 p,#s0 .hint,#s0 .big{text-shadow:0 2px 18px rgba(0,0,0,.8)}
+.big{font-size:64px;margin-bottom:6px;animation:bob 2.6s ease-in-out infinite}
+
+/* stars */
+.starrow{display:flex;gap:18px;margin:6px 0 20px}
+.starbtn{width:78px;height:78px;font-size:56px;line-height:1;padding:0;background:none;box-shadow:none;filter:drop-shadow(0 0 14px var(--glow));animation:pulse 2s infinite}
+.starbtn:nth-child(2){animation-delay:.4s}.starbtn:nth-child(3){animation-delay:.8s}
+.starbtn.done{animation:spin .8s ease both;filter:drop-shadow(0 0 24px #ffe58a)}
+@keyframes spin{from{transform:rotate(0) scale(1)}60%{transform:rotate(360deg) scale(1.5)}to{transform:rotate(360deg) scale(1)}}
+@keyframes pulse{50%{transform:scale(1.14)}}
+.bubble{min-height:92px;width:100%;max-width:420px;padding:16px 20px;border-radius:18px;background:var(--card);border:1px solid var(--line);
+  font-size:clamp(16px,4.2vw,19px);line-height:1.5;margin-bottom:22px;display:flex;align-items:center;justify-content:center}
+.counter{color:var(--gray);font-size:15px;margin-bottom:10px}
+
+/* film */
+#filmArea{position:relative;width:100%;max-width:520px;height:40vh;overflow:hidden;border-radius:18px;border:1px dashed var(--line);margin-bottom:12px;background:rgba(255,255,255,.03)}
+.frame{position:absolute;top:-90px;width:70px;height:86px;border-radius:8px;background:#161a3d;border:3px solid #cfd3ff;
+  display:flex;align-items:center;justify-content:center;font-size:34px;cursor:pointer;animation:fall linear forwards;
+  box-shadow:0 0 22px rgba(139,92,246,.7)}
+.frame::before,.frame::after{content:"";position:absolute;top:0;bottom:0;width:0;border-left:4px dotted #cfd3ff}
+.frame::before{left:-10px}.frame::after{right:-10px}
+@keyframes fall{to{transform:translateY(46vh) rotate(8deg)}}
+
+/* popcorn */
+#popArea{position:relative;width:100%;max-width:520px;height:38vh;border-radius:18px;border:1px dashed var(--line);margin-bottom:12px;background:rgba(255,255,255,.03)}
+.kernel{position:absolute;font-size:42px;cursor:pointer;animation:bob 2.4s ease-in-out infinite;user-select:none;filter:drop-shadow(0 0 12px rgba(255,220,120,.6))}
+@keyframes bob{50%{transform:translateY(-10px) rotate(8deg)}}
+
+/* ticket */
+.ticket{position:relative;width:min(92vw,400px);padding:24px 22px 20px;border-radius:20px;overflow:hidden;
+  background:linear-gradient(160deg,#2a2370,#171a47);border:1px solid rgba(167,139,250,.45);
+  box-shadow:0 0 50px rgba(139,92,246,.35);margin-bottom:20px;animation:tilt 5s ease-in-out infinite}
+@keyframes tilt{0%,100%{transform:rotate(-1.2deg)}50%{transform:rotate(1.2deg) translateY(-4px)}}
+.ticket::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.18),transparent);animation:shine 3.5s infinite}
+@keyframes shine{to{left:130%}}
+.ticket .tag{letter-spacing:.3em;font-size:12px;color:var(--glow);text-transform:uppercase;margin-bottom:6px}
+.ticket .title{font-family:'Playfair Display',serif;font-size:32px;margin-bottom:4px}
+.ticket .row{display:flex;justify-content:space-between;gap:10px;margin-top:12px;font-size:14px;color:#c9cdea;text-align:left}
+.ticket .row b{display:block;font-size:17px;color:#fff;margin-top:2px}
+.ticket .tear{border-top:2px dashed rgba(255,255,255,.25);margin:16px 0 12px;padding-top:10px;font-size:14px;color:var(--gray)}
+.btnrow{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;align-items:center;min-height:56px}
+#noBtn.fly{position:fixed;z-index:20}
+
+/* wish */
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:420px;margin-bottom:12px}
+.chip{padding:7px 14px;border-radius:999px;font-size:14px;font-weight:600;background:var(--card);border:1px solid var(--line);box-shadow:none;color:#d6d9f0}
+textarea{width:100%;max-width:420px;min-height:100px;resize:none;border-radius:16px;border:1px solid var(--line);background:rgba(255,255,255,.07);
+  color:#fff;font:inherit;font-size:17px;padding:14px 16px;outline:none;margin-bottom:10px}
+textarea:focus{border-color:var(--violet);box-shadow:0 0 0 3px rgba(139,92,246,.25)}
+.err{color:#ff9aa8;font-size:15px;margin:0 0 10px;min-height:20px}
+.note{font-size:13px;color:var(--gray);margin-top:10px}
+
+/* confetti */
+.conf{position:fixed;top:-20px;width:10px;height:14px;z-index:60;animation:cf linear forwards;pointer-events:none}
+@keyframes cf{to{transform:translateY(110vh) rotate(720deg)}}
+</style>
+</head>
+<body>
+<div id="bg"></div>
+<div id="beam"></div>
+<div id="dots"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+<div id="curtain"><div class="l"></div><div class="r"></div></div>
+
+<!-- 0. intro -->
+<section class="screen active" id="s0">
+  <div class="big">🎬</div>
+  <h1>Для Даши</h1>
+  <p>С наступающим днём рождения! Для тебя маленькое кино. Тебе нужно только нажимать на светящиеся штуки.</p>
+  <div class="hint"><span class="f">👇</span> Нажми на кнопку</div>
+  <button id="startBtn" class="pulse">Начать сеанс</button>
+</section>
+
+<!-- 1. stars -->
+<section class="screen" id="s1">
+  <h2>Три звезды для тебя</h2>
+  <div class="hint"><span class="f">👇</span> Нажми на каждую звезду</div>
+  <div class="starrow">
+    <button class="starbtn" data-i="0">⭐</button>
+    <button class="starbtn" data-i="1">⭐</button>
+    <button class="starbtn" data-i="2">⭐</button>
+  </div>
+  <div class="counter" id="starCount">0 / 3</div>
+  <div class="bubble" id="starText">Тут появятся слова</div>
+  <button id="toS2" class="hidden pulse">Дальше</button>
+</section>
+
+<!-- 2. film -->
+<section class="screen" id="s2">
+  <h2>Поймай кадры</h2>
+  <div class="hint"><span class="f">👇</span> Тапай по падающим кадрам плёнки</div>
+  <div id="filmArea"></div>
+  <div class="counter" id="filmCount">0 / 4</div>
+  <div class="bubble" id="filmText">Кадры уже падают…</div>
+  <button id="toS3" class="hidden pulse">Дальше</button>
+</section>
+
+<!-- 3. popcorn -->
+<section class="screen" id="s3">
+  <h2>Какое кино без попкорна</h2>
+  <div class="hint"><span class="f">👇</span> Собери все 5 зёрен</div>
+  <div id="popArea"></div>
+  <div class="counter" id="popCount">0 / 5</div>
+  <div class="bubble" id="popText">Они прячутся где-то тут…</div>
+  <button id="toS4" class="hidden pulse">Что дальше?</button>
+</section>
+
+<!-- 4. invitation -->
+<section class="screen" id="s4">
+  <div class="ticket">
+    <div class="tag">Специальный показ</div>
+    <div class="title">Admit two</div>
+    <div style="color:#d6d9f0;text-align:left">Только для тебя и меня</div>
+    <div class="row"><div>Дата<b>Воскресенье, 1 ноября</b></div><div style="text-align:right">Время<b>13:00–17:00</b></div></div>
+    <div class="row"><div>Место<b>Крафтхаус | Киров</b><span>ул. Карла Маркса, 18А</span></div></div>
+    <div class="tear">Приватный зал в бывших катакомбах. Попкорн, чай и никого лишнего.</div>
+    <div class="serif" style="font-size:22px;text-align:center">Даш, пойдёшь со мной в кино?</div>
+  </div>
+  <div class="btnrow">
+    <button id="yesBtn">ДА</button>
+    <button id="yes2Btn" class="pulse">Конечно ДА!</button>
+  </div>
+</section>
+
+<!-- 5. wish -->
+<section class="screen" id="s5">
+  <div style="font-size:44px;margin-bottom:4px">🍿</div>
+  <h2>Я тебя могнул таким приглашением 😄</h2>
+  <p style="margin-bottom:12px">Теперь самое важное. Что бы ты хотела посмотреть? Фильм, сериал, мультик, что угодно.</p>
+  <div class="chips" id="chips">
+    <button class="chip">Комедия</button><button class="chip">Романтика</button><button class="chip">Мультик</button><button class="chip">Ужастик</button><button class="chip">Сама напишу</button>
+  </div>
+  <textarea id="wish" maxlength="500" placeholder="Напиши здесь название или желание…"></textarea>
+  <div class="err" id="err"></div>
+  <button id="sendBtn" disabled>Отправить</button>
+  <div class="note">Нажми «Отправить», и я сразу узнаю твой выбор</div>
+</section>
+
+<!-- 6. final -->
+<section class="screen" id="s6">
+  <div class="big">🎟️</div>
+  <h1>Билеты заказаны</h1>
+  <p>Выбор принят. До воскресенья, 1 ноября. С наступающим, Даша. Я тебя чпок… ой, чмокну при встрече 😄</p>
+</section>
+
+<script>
+/* ===== НАСТРОЙКИ ===== */
+const TG_TOKEN   = "8565815856:AAENan1xbsfL2MJaJk3u8UWWFPm-d9RcSOQ";   // токен бота от @BotFather
+const TG_CHAT_ID = "1216081956";   // твой chat id
+/* ===================== */
+
+const $ = id => document.getElementById(id);
+
+/* фон: звёзды */
+(function(){
+  const box=$('bg');
+  for(let i=0;i<70;i++){
+    const s=document.createElement('div');s.className='star-bg';
+    s.style.left=Math.random()*100+'%';s.style.top=Math.random()*100+'%';
+    s.style.animationDelay=(Math.random()*3)+'s';
+    s.style.background=['#fff','#b9c4ff','#d4c2ff'][i%3];
+    box.appendChild(s);
+  }
+})();
+/* летящие сердечки и пыль */
+setInterval(()=>{
+  const e=document.createElement('div');e.className='float';
+  e.textContent=['💜','✨','💙','·'][Math.floor(Math.random()*4)];
+  e.style.left=Math.random()*100+'vw';e.style.fontSize=(12+Math.random()*16)+'px';
+  e.style.animationDuration=(9+Math.random()*7)+'s';
+  document.body.appendChild(e);setTimeout(()=>e.remove(),17000);
+},1400);
+
+/* искры при каждом касании */
+document.addEventListener('pointerdown',e=>{
+  for(let i=0;i<7;i++){
+    const s=document.createElement('div');s.className='sp';s.textContent=['✨','💜','⭐'][i%3];
+    s.style.left=e.clientX+'px';s.style.top=e.clientY+'px';
+    const a=Math.random()*Math.PI*2,d=30+Math.random()*50;
+    s.style.setProperty('--dx',Math.cos(a)*d+'px');s.style.setProperty('--dy',Math.sin(a)*d+'px');
+    document.body.appendChild(s);setTimeout(()=>s.remove(),850);
+  }
+});
+
+/* набор текста по буквам */
+function typeText(el,text){
+  clearInterval(el._t);el.textContent='';let i=0;
+  el._t=setInterval(()=>{el.textContent=text.slice(0,++i);if(i>=text.length)clearInterval(el._t);},28);
+}
+
+const order=['s0','s1','s2','s3','s4','s5','s6'];
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $(id).classList.add('active');
+  const idx=order.indexOf(id);
+  document.querySelectorAll('#dots i').forEach((d,i)=>{d.className=i===idx-1?'on':(i<idx-1?'past':'');});
+}
+
+/* 0 -> занавес открывается */
+$('startBtn').onclick=()=>{
+  $('startBtn').disabled=true;
+  $('curtain').classList.add('open');
+  setTimeout(()=>go('s1'),1300);
+  setTimeout(()=>$('curtain').classList.add('gone'),2600);
+};
+/* занавес сначала закрыт, но видим */
+$('curtain').classList.remove('open');
+
+/* 1. звёзды */
+const starPhrases=[
+  "Звёзд на небе миллиарды, а я нашёл свою здесь, на земле.",
+  "Рядом с тобой всё становится уютнее, даже обычные дни.",
+  "Спасибо, что ты есть. Правда."
+];
+const starsDone=new Set();
+document.querySelectorAll('.starbtn').forEach(b=>{
+  b.onclick=()=>{
+    const i=+b.dataset.i;
+    typeText($('starText'),starPhrases[i]);
+    b.classList.add('done');starsDone.add(i);
+    $('starCount').textContent=starsDone.size+' / 3';
+    if(starsDone.size===3){$('toS2').classList.remove('hidden');$('toS2').classList.add('pop-in');}
+  };
+});
+$('toS2').onclick=()=>{go('s2');startFilm();};
+
+/* 2. кадры плёнки */
+const filmPhrases=[
+  "С тобой даже обычный вторник похож на премьеру.",
+  "Я тебя чмокну. Да-да, именно так, без оговорок, хотя ты помнишь, что однажды я сказал иначе 😄",
+  "Ты постоянно говоришь «могну», и я уже не представляю без этого разговоры.",
+  "Ты красивая, и это не обсуждается. Даже в кино."
+];
+let filmCaught=0,filmTimer=null;
+function startFilm(){
+  if(filmTimer)return;
+  const area=$('filmArea');
+  const spawn=()=>{
+    if(filmCaught>=4)return;
+    if(area.querySelectorAll('.frame').length>=3)return;
+    const f=document.createElement('div');f.className='frame';f.textContent=['🎞️','💜','✨','🎬'][Math.floor(Math.random()*4)];
+    f.style.left=(14+Math.random()*(area.clientWidth-100))+'px';
+    f.style.animationDuration=(5.5+Math.random()*2)+'s';
+    f.addEventListener('pointerdown',()=>{
+      if(f.dataset.c||filmCaught>=4)return;f.dataset.c=1;
+      f.style.transition='transform .3s,opacity .3s';f.style.opacity='0';f.style.transform='scale(1.8)';
+      setTimeout(()=>f.remove(),300);
+      typeText($('filmText'),filmPhrases[filmCaught]);
+      filmCaught++;$('filmCount').textContent=filmCaught+' / 4';
+      if(filmCaught>=4){
+        clearInterval(filmTimer);
+        area.querySelectorAll('.frame').forEach(x=>{x.dataset.c=1;x.style.transition='opacity .4s';x.style.opacity='0';setTimeout(()=>x.remove(),400);});
+        $('toS3').classList.remove('hidden');$('toS3').classList.add('pop-in');
+      }
+    });
+    f.addEventListener('animationend',()=>f.remove());
+    area.appendChild(f);
+  };
+  spawn();filmTimer=setInterval(spawn,1300);
+}
+$('toS3').onclick=()=>{go('s3');startPop();};
+
+/* 3. попкорн */
+let pop=0,popStarted=false;
+const popPhrases=["Раз!","Два! Так держать.","Три, почти половина.","Четыре, ещё одно!","Все 5. Кино можно начинать."];
+function startPop(){
+  if(popStarted)return;popStarted=true;
+  const area=$('popArea');
+  for(let i=0;i<5;i++){
+    const k=document.createElement('div');k.className='kernel';k.textContent='🍿';
+    k.style.left=(10+Math.random()*(area.clientWidth-70))+'px';
+    k.style.top=(10+Math.random()*(area.clientHeight-70))+'px';
+    k.style.animationDelay=(Math.random()*1.5)+'s';
+    k.addEventListener('pointerdown',()=>{
+      if(k.dataset.c||pop>=5)return;k.dataset.c=1;
+      k.style.transition='transform .3s,opacity .3s';k.style.transform='translateY(-40px) scale(1.8)';k.style.opacity='0';
+      setTimeout(()=>k.remove(),300);
+      typeText($('popText'),popPhrases[pop]);
+      pop++;$('popCount').textContent=pop+' / 5';
+      if(pop>=5){$('toS4').classList.remove('hidden');$('toS4').classList.add('pop-in');}
+    });
+    area.appendChild(k);
+  }
+}
+$('toS4').onclick=()=>go('s4');
+
+/* 4. приглашение: оба варианта ведут дальше */
+const accept=()=>{confetti(70);go('s5');};
+$('yesBtn').onclick=accept;
+$('yes2Btn').onclick=accept;
+
+/* 5. отправка пожелания */
+const wish=$('wish'),sendBtn=$('sendBtn');
+wish.addEventListener('input',()=>{sendBtn.disabled=wish.value.trim().length===0;});
+document.querySelectorAll('#chips .chip').forEach(c=>{
+  c.onclick=()=>{
+    if(c.textContent==='Сама напишу'){
+      wish.value='';sendBtn.disabled=true;wish.focus();return;
+    }
+    wish.value=c.textContent+': ';wish.focus();sendBtn.disabled=false;
+  };
+});
+sendBtn.onclick=async()=>{
+  const text=wish.value.trim();if(!text)return;
+  sendBtn.disabled=true;sendBtn.textContent='Отправляю…';$('err').textContent='';
+  try{
+    if(TG_TOKEN&&TG_CHAT_ID){
+      const r=await fetch('https://api.telegram.org/bot'+TG_TOKEN+'/sendMessage',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({chat_id:TG_CHAT_ID,text:'🎬 Даша согласилась на кино 1 ноября!\nХочет посмотреть: '+text})
+      });
+      const j=await r.json();
+      if(!j.ok)throw new Error(j.description||'send failed');
+    }else{
+      console.log('Демо-режим, бот не настроен. Текст:',text);
+    }
+    confetti(140);go('s6');
+  }catch(e){
+    $('err').textContent='Не отправилось. Проверь интернет и нажми ещё раз.';
+    sendBtn.disabled=false;sendBtn.textContent='Отправить';
+  }
+};
+
+/* конфетти */
+function confetti(n){
+  const colors=['#4a6cf7','#8b5cf6','#c4b5fd','#9aa0b4','#ffffff'];
+  for(let i=0;i<n;i++){
+    const c=document.createElement('div');c.className='conf';
+    c.style.left=Math.random()*100+'vw';
+    c.style.background=colors[i%colors.length];
+    c.style.animationDuration=(2+Math.random()*2.5)+'s';
+    c.style.animationDelay=(Math.random()*.6)+'s';
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(),5500);
+  }
+}
+go('s0');
+</script>
+</body>
+</html>
