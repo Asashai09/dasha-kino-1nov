@@ -114,6 +114,8 @@ textarea:focus{border-color:var(--violet);box-shadow:0 0 0 3px rgba(139,92,246,.
 .err{color:#ff9aa8;font-size:15px;margin:0 0 10px;min-height:20px}
 .note{font-size:13px;color:var(--gray);margin-top:10px}
 
+#muteBtn{position:fixed;top:10px;right:12px;z-index:80;width:40px;height:40px;padding:0;font-size:20px;background:rgba(255,255,255,.08);border:1px solid var(--line);box-shadow:none}
+#fallback{display:inline-block;margin-top:10px;color:var(--glow);font-size:14px}
 /* confetti */
 .conf{position:fixed;top:-20px;width:10px;height:14px;z-index:60;animation:cf linear forwards;pointer-events:none}
 @keyframes cf{to{transform:translateY(110vh) rotate(720deg)}}
@@ -123,6 +125,7 @@ textarea:focus{border-color:var(--violet);box-shadow:0 0 0 3px rgba(139,92,246,.
 <div id="bg"></div>
 <div id="beam"></div>
 <div id="dots"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+<button id="muteBtn" aria-label="Звук">🔊</button>
 <div id="curtain"><div class="l"></div><div class="r"></div></div>
 
 <!-- 0. intro -->
@@ -195,6 +198,7 @@ textarea:focus{border-color:var(--violet);box-shadow:0 0 0 3px rgba(139,92,246,.
   </div>
   <textarea id="wish" maxlength="500" placeholder="Напиши здесь название или желание…"></textarea>
   <div class="err" id="err"></div>
+  <a id="fallback" class="hidden" target="_blank" rel="noopener">Не получается? Нажми сюда и отправь выбор мне в Telegram</a>
   <button id="sendBtn" disabled>Отправить</button>
   <div class="note">Нажми «Отправить», и я сразу узнаю твой выбор</div>
 </section>
@@ -210,9 +214,62 @@ textarea:focus{border-color:var(--violet);box-shadow:0 0 0 3px rgba(139,92,246,.
 /* ===== НАСТРОЙКИ ===== */
 const TG_TOKEN   = "8565815856:AAENan1xbsfL2MJaJk3u8UWWFPm-d9RcSOQ";   // токен бота от @BotFather
 const TG_CHAT_ID = "1216081956";   // твой chat id
+const W3_KEY     = "e6c1171d-1a60-4800-b0cf-eab863153684";   // ключ с web3forms.com (ответ придёт на почту, работает без VPN)
+const TG_USERNAME = "Aleksandr_Razu";  // твой username в Telegram без @ (запасная ссылка, если ничего не отправилось)
 /* ===================== */
 
 const $ = id => document.getElementById(id);
+
+/* ===== ЗВУКИ (синтез в браузере, без файлов) ===== */
+let AC=null,muted=false;
+function actx(){
+  if(muted)return null;
+  if(!AC){const C=window.AudioContext||window.webkitAudioContext;if(C)AC=new C();}
+  if(AC&&AC.state==='suspended')AC.resume();
+  return AC;
+}
+['touchend','click'].forEach(ev=>document.addEventListener(ev,()=>actx(),{passive:true}));
+function tone(f,d,type,vol,delay,slide){
+  const a=actx();if(!a)return;
+  const t=a.currentTime+(delay||0);
+  const o=a.createOscillator(),g=a.createGain();
+  o.type=type||'sine';o.frequency.setValueAtTime(f,t);
+  if(slide)o.frequency.exponentialRampToValueAtTime(f*slide,t+d);
+  g.gain.setValueAtTime(.0001,t);
+  g.gain.exponentialRampToValueAtTime(vol||.1,t+.012);
+  g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+.05);
+}
+function noise(d,vol,delay,f0,f1){
+  const a=actx();if(!a)return;
+  const t=a.currentTime+(delay||0),n=Math.floor(a.sampleRate*d);
+  const buf=a.createBuffer(1,n,a.sampleRate),data=buf.getChannelData(0);
+  for(let i=0;i<n;i++)data[i]=Math.random()*2-1;
+  const s=a.createBufferSource();s.buffer=buf;
+  const fl=a.createBiquadFilter();fl.type='bandpass';
+  fl.frequency.setValueAtTime(f0,t);fl.frequency.exponentialRampToValueAtTime(f1,t+d);
+  const g=a.createGain();
+  g.gain.setValueAtTime(.0001,t);
+  g.gain.exponentialRampToValueAtTime(vol,t+d*.4);
+  g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  s.connect(fl);fl.connect(g);g.connect(a.destination);s.start(t);
+}
+const S={
+  tap(){tone(660,.07,'sine',.035)},
+  whoosh(){noise(1.8,.25,0,300,2400);tone(180,1.6,'sine',.05,0,2)},
+  star(i){const b=[523,659,784][i%3];tone(b,.5,'sine',.12);tone(b*2,.6,'sine',.06,.06);tone(b*3,.5,'sine',.03,.12)},
+  sparkle(){[1047,1319,1568,2093].forEach((f,k)=>tone(f,.18,'triangle',.07,k*.06))},
+  pop(){noise(.12,.35,0,1200,300);tone(300,.12,'square',.05,0,.4)},
+  tada(){[523,659,784,1047].forEach((f,k)=>tone(f,.35,'triangle',.1,k*.1));tone(1047,.8,'sine',.1,.45)}
+};
+$('muteBtn').onclick=()=>{muted=!muted;$('muteBtn').textContent=muted?'🔇':'🔊';if(!muted)S.tap();};
+
+/* отправка JSON с таймаутом */
+function postJson(url,body){
+  const ctl=new AbortController();const t=setTimeout(()=>ctl.abort(),12000);
+  return fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(body),signal:ctl.signal})
+    .then(r=>r.json()).finally(()=>clearTimeout(t));
+}
 
 /* фон: звёзды */
 (function(){
@@ -236,6 +293,7 @@ setInterval(()=>{
 
 /* искры при каждом касании */
 document.addEventListener('pointerdown',e=>{
+  S.tap();
   for(let i=0;i<7;i++){
     const s=document.createElement('div');s.className='sp';s.textContent=['✨','💜','⭐'][i%3];
     s.style.left=e.clientX+'px';s.style.top=e.clientY+'px';
@@ -262,6 +320,7 @@ function go(id){
 /* 0 -> занавес открывается */
 $('startBtn').onclick=()=>{
   $('startBtn').disabled=true;
+  S.whoosh();
   $('curtain').classList.add('open');
   setTimeout(()=>go('s1'),1300);
   setTimeout(()=>$('curtain').classList.add('gone'),2600);
@@ -279,6 +338,7 @@ const starsDone=new Set();
 document.querySelectorAll('.starbtn').forEach(b=>{
   b.onclick=()=>{
     const i=+b.dataset.i;
+    S.star(i);
     typeText($('starText'),starPhrases[i]);
     b.classList.add('done');starsDone.add(i);
     $('starCount').textContent=starsDone.size+' / 3';
@@ -308,6 +368,7 @@ function startFilm(){
       if(f.dataset.c||filmCaught>=4)return;f.dataset.c=1;
       f.style.transition='transform .3s,opacity .3s';f.style.opacity='0';f.style.transform='scale(1.8)';
       setTimeout(()=>f.remove(),300);
+      S.sparkle();
       typeText($('filmText'),filmPhrases[filmCaught]);
       filmCaught++;$('filmCount').textContent=filmCaught+' / 4';
       if(filmCaught>=4){
@@ -338,6 +399,7 @@ function startPop(){
       if(k.dataset.c||pop>=5)return;k.dataset.c=1;
       k.style.transition='transform .3s,opacity .3s';k.style.transform='translateY(-40px) scale(1.8)';k.style.opacity='0';
       setTimeout(()=>k.remove(),300);
+      S.pop();
       typeText($('popText'),popPhrases[pop]);
       pop++;$('popCount').textContent=pop+' / 5';
       if(pop>=5){$('toS4').classList.remove('hidden');$('toS4').classList.add('pop-in');}
@@ -348,7 +410,7 @@ function startPop(){
 $('toS4').onclick=()=>go('s4');
 
 /* 4. приглашение: оба варианта ведут дальше */
-const accept=()=>{confetti(70);go('s5');};
+const accept=()=>{S.tada();confetti(70);go('s5');};
 $('yesBtn').onclick=accept;
 $('yes2Btn').onclick=accept;
 
@@ -366,20 +428,30 @@ document.querySelectorAll('#chips .chip').forEach(c=>{
 sendBtn.onclick=async()=>{
   const text=wish.value.trim();if(!text)return;
   sendBtn.disabled=true;sendBtn.textContent='Отправляю…';$('err').textContent='';
+  const msg='🎬 Даша согласилась на кино 1 ноября!\nХочет посмотреть: '+text;
   try{
+    const jobs=[];
     if(TG_TOKEN&&TG_CHAT_ID){
-      const r=await fetch('https://api.telegram.org/bot'+TG_TOKEN+'/sendMessage',{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({chat_id:TG_CHAT_ID,text:'🎬 Даша согласилась на кино 1 ноября!\nХочет посмотреть: '+text})
-      });
-      const j=await r.json();
-      if(!j.ok)throw new Error(j.description||'send failed');
-    }else{
-      console.log('Демо-режим, бот не настроен. Текст:',text);
+      jobs.push(postJson('https://api.telegram.org/bot'+TG_TOKEN+'/sendMessage',{chat_id:TG_CHAT_ID,text:msg})
+        .then(j=>{if(!j.ok)throw new Error('telegram');}));
     }
-    confetti(140);go('s6');
+    if(W3_KEY){
+      jobs.push(postJson('https://api.web3forms.com/submit',{access_key:W3_KEY,subject:'Даша выбрала кино',from_name:'Приглашение в кино',message:msg})
+        .then(j=>{if(!j.success)throw new Error('web3forms');}));
+    }
+    if(jobs.length){
+      await Promise.any(jobs);   // достаточно, чтобы сработал любой способ
+    }else{
+      console.log('Демо-режим, отправка не настроена. Текст:',text);
+    }
+    S.tada();confetti(140);go('s6');
   }catch(e){
     $('err').textContent='Не отправилось. Проверь интернет и нажми ещё раз.';
+    if(TG_USERNAME){
+      const a=$('fallback');
+      a.href='https://t.me/'+TG_USERNAME+'?text='+encodeURIComponent(msg);
+      a.classList.remove('hidden');
+    }
     sendBtn.disabled=false;sendBtn.textContent='Отправить';
   }
 };
